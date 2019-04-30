@@ -299,11 +299,11 @@
 <p>② 在服务端的终端按<code>Crtl + c</code>或者其他方式断开与客户端的连接，像①中一样，再次启动服务端，此时出现<code>bind() error</code>错误。</p>
 <p>服务器端出现这种情况的原因是调用套接字分配网络地址函数<code>bind()</code>的时候之前使用建立连接的同一端口号还没有来得及停用（大约要过两三分钟才处于可用状态），而客户端申请连接的端口是任意指定，程序运行时会动态分配端口号。</p>
 <p>服务器端端口没有被释放到被释放的时间状态称为Time-wait状态，这个状态的出现可以借助TCP断开连接的四次握手协议来分析，如下图：</p>
-<p><img src="/2019/04/12/socketprogram/closed.jpg" alt="四次握手协议"></p>
+<p><img src="/2019/04/12/socket编程/closed.jpg" alt="四次握手协议"></p>
 <p>当client端发送<code>ACK=1 ack=k+1</code>这个消息给服务端就立即消除套接字，若此时该消息中途传输被遗失，则这个时候server端就永远无法收到client的<code>ACK</code>消息了。</p>
 <h4 id="3-TCP-NODELAY"><a href="#3-TCP-NODELAY" class="headerlink" title="3. TCP_NODELAY"></a>3. TCP_NODELAY</h4><p>TCP套接字默认是使用Nagle算法的，该算法的特征是<strong>只有收到前一条数据的ACK消息后，才会发送下一条数据。</strong></p>
 <p>从网上找到一张图说明使用和禁用Nagle算法的区别（<a href="http://www.it610.com/article/5254468.htm" target="_blank" rel="noopener">图片来源</a>），如下：</p>
-<p><img src="/2019/04/12/socketprogram/timg.jpeg" alt="Nagle"></p>
+<p><img src="/2019/04/12/socket编程/timg.jpeg" alt="Nagle"></p>
 <p>设置代码如下：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;netinet/tcp.h&gt; //注意要引入这个头文件</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> opt_val = <span class="number">1</span>;</span><br><span class="line">setsockopt(serv_socket, IPPROTO_TCP, TCP_NODELAY, (<span class="keyword">void</span>*)&amp;opt_val, <span class="keyword">sizeof</span>(opt_val));</span><br></pre></td></tr></table></figure>
 <h2 id="程序案例"><a href="#程序案例" class="headerlink" title="程序案例"></a>程序案例</h2><p>案例的过程，在网上看到了关于read和write的发送与接受过程的图，便于理解：</p>
