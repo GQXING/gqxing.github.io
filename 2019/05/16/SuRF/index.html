@@ -66,7 +66,7 @@
 <p>​    现有的过滤器都仅仅支持point query，例如现在RocksDB里面有一张学生表，现在要做查询，找出年龄等于18岁的学术，我们可以通过在每一个SSTable（LSM Tree的分层结构）上加一个布隆过滤器减少磁盘IO，从而加速查找过程。但是现在查询请求变成了学生表中是否含有年龄段在22到25之间的学生，这个时候布隆过滤器就没有办法工作了。</p>
 <p>​    本篇论文的核心是提出了一种基于succinct data structure的trie树，同时对该树进行合理的编码，从而降低占用内存的大小，同时保留查询能力，既支持point query，也支持range quey。</p>
 <h2 id="2-SUCCINCT-RANGE-FILTERS"><a href="#2-SUCCINCT-RANGE-FILTERS" class="headerlink" title="2. SUCCINCT RANGE FILTERS"></a>2. SUCCINCT RANGE FILTERS</h2><p>​    为了在集合中查找字符串，首先想到的是Trie，一颗不做任何处理的Trie树如下图所示，</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/trie.jpg" alt="full Trie"></p>
+<p><img src="/2019/05/16/SuRF/trie.jpg" alt="full Trie"></p>
 <p>从起始节点到最底层的叶子节点存储了一个完整的key，所以它是完全精确的，在集合中查找某个字符串的时候，不会出现关键字是否存在判别错误的情况。但是它有一个缺点就是占用的内存空间太大。为了让这棵Trie树变小，就要去截断一部分后缀，只会保存最短的前缀且这个前缀可以与集合中其他元素不同，这棵Trie树被称为Surf-Base，如图所示：</p>
 <p><img src="/2019/05/16/SuRF/05/16/SuRF/baseTrie.jpg" alt="baseTrie"></p>
 <p>但是Surf-Base有个问题就是如果现在有一个字符串的前缀和树中存储的字符串前缀相同，但它又不在给定的字符串集合中，这时判别集合中是否有关键字的FPR(False Positive Rate)就会很高，比如通过上图右部的SuRF-Base去判别集合中SIGMETRIC是否存在，就会认为该字符串存在于该集合中，就会得到一种错误信息。为了降低FPR，作者对原来的SuRF-Base结构做了改进，提出了SuRF-Hash、SuRF-Real以及SuRF-Mixed三种结构。</p>
