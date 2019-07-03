@@ -68,16 +68,16 @@
 <h2 id="2-SUCCINCT-RANGE-FILTERS"><a href="#2-SUCCINCT-RANGE-FILTERS" class="headerlink" title="2. SUCCINCT RANGE FILTERS"></a>2. SUCCINCT RANGE FILTERS</h2><p>​    为了在集合中查找字符串，首先想到的是Trie，一颗不做任何处理的Trie树如下图所示，</p>
 <p><img src="/2019/05/16/SuRF/trie.jpg" alt="full Trie"></p>
 <p>从起始节点到最底层的叶子节点存储了一个完整的key，所以它是完全精确的，在集合中查找某个字符串的时候，不会出现关键字是否存在判别错误的情况。但是它有一个缺点就是占用的内存空间太大。为了让这棵Trie树变小，就要去截断一部分后缀，只会保存最短的前缀且这个前缀可以与集合中其他元素不同，这棵Trie树被称为Surf-Base，如图所示：</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/baseTrie.jpg" alt="baseTrie"></p>
+<p><img src="/2019/05/16/SuRF/baseTrie.jpg" alt="baseTrie"></p>
 <p>但是Surf-Base有个问题就是如果现在有一个字符串的前缀和树中存储的字符串前缀相同，但它又不在给定的字符串集合中，这时判别集合中是否有关键字的FPR(False Positive Rate)就会很高，比如通过上图右部的SuRF-Base去判别集合中SIGMETRIC是否存在，就会认为该字符串存在于该集合中，就会得到一种错误信息。为了降低FPR，作者对原来的SuRF-Base结构做了改进，提出了SuRF-Hash、SuRF-Real以及SuRF-Mixed三种结构。</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/hashreal.jpg" alt></p>
+<p><img src="/2019/05/16/SuRF/hashreal.jpg" alt></p>
 <ul>
 <li><p>SuRF-Hash(SuRF with Hashed Key Suffixes)：针对SuRF-Base有很高的FPR，在将集合中的关键字加入到SuRF-Base树的同时，也会对关键字进行hash计算，将得到的hash值的n个bit存储到最终的value中，当进行关键字的查找时，不仅要在Trie树上面查找，还要对比hash值。这种结构有利于Point查询，且保存的hash值每多一位，做Point quey的FPR就会减少一半。但是这个结构并不会对Range query有任何帮助，不能减少range query的FPR。</p>
 </li>
 <li><p>SuRF-Real(SuRF with Real Key Suffixes)：和SuRF with Hashed Key Suffixes不同，SuRF-Real将存储的hash值的n个bit换成了真实key（即value中存放着key），例如上图的右部分表示添加了8bit的suffixes，这样虽然同时增强了Point query和Range query，但是关键字的区分度还是不高，在point查询下, 它的FPR比SuRF-Hash要高。</p>
 </li>
 <li><p>SuRF-Mixed(SuRF with Mixed Key Suffixes)：为了同时享受Hash和Real两种方式的优点, Mixed模式就是将两种方式混合使用，存储的value中有一部分是real key，另一部分是hashed key，混合的比例可以根据数据分布进行调节来获得最好的效果。如下图是一个案例：</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/mixed.jpg" alt="SuRF-Mixed"></p>
+<p><img src="/2019/05/16/SuRF/mixed.jpg" alt="SuRF-Mixed"></p>
 </li>
 </ul>
 <h2 id="3-FAST-SUCCINCT-TRIES"><a href="#3-FAST-SUCCINCT-TRIES" class="headerlink" title="3. FAST SUCCINCT TRIES"></a>3. FAST SUCCINCT TRIES</h2><h3 id="LOUDS编码"><a href="#LOUDS编码" class="headerlink" title="LOUDS编码"></a>LOUDS编码</h3><p>​    FAST SUCCINCT TRIES是作者提出来的一种对Trie树进行编码的方式，可以减小该树在内存中空间，同时保留了查询的能力。因为这种方式是基于LOUDS(Level-Ordered Unary Degree Sequence)提出来的，所以需要先了解LOUDS的编码规则：</p>
@@ -86,7 +86,7 @@
 <li>扫描到一个节点时，该节点有n个孩子，则用n个1和一个0对这个节点进行编码。</li>
 </ul>
 <p>举例如下图所示：从根节点开始依次层序遍历这棵树，遇到一个节点，该节点有几个孩子，就用几个1再加上一个结束标志0对该节点编码，例如，对于节点3，它有3个孩子，就用“1110”对该节点编码。</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/louds.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/louds.jpg" alt="louds"></p>
 <p>​    对这棵树编码完成后得到的是一组01字符串，现在要根据这个字符串来访问树中的节点，可以总结成两个经典的操作：</p>
 <ul>
 <li>通过父亲节点找孩子节点</li>
@@ -104,7 +104,7 @@
 </li>
 </ul>
 <p>上面的操作可以通过下面的表格来具体详细解释，其中value行的比特序列是上面那张图中的编码序列：</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/operator.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/operator.jpg" alt="louds"></p>
 <p>现在基于下面三个公式来访问整个树：</p>
 <ul>
 <li><p>求层序遍历的第i个节点在比特序列中的位置</p>
@@ -122,7 +122,7 @@
 <p>​            求在比特序列中起始位置为12的孩子位置：select0(rank1(12)) = select0(9)+1 = 22</p>
 <p>​            求在比特序列中起始位置为22的节点的父亲位置：select1(rank0(22)) = select1(9) = 12</p>
 <h3 id="FST编码"><a href="#FST编码" class="headerlink" title="FST编码"></a>FST编码</h3><p>基于LOUDS编码方式, FST( FAST SUCCINCT TRIES)对LOUDS进行了进一步压缩, 下图介绍了基本的压缩方法:</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/fst.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/fst.jpg" alt="louds"></p>
 <p>FST将LOUDS分成了两层, 上层节点数量少，数据访问频繁, 使用LOUDS-Dense编码方式, 下层节点数多, 数据访问次数少，使用LOUDS-Sparse编码方式.</p>
 <h4 id="LOUDS-Dense和LOUDS-Sparse"><a href="#LOUDS-Dense和LOUDS-Sparse" class="headerlink" title="LOUDS-Dense和LOUDS-Sparse"></a>LOUDS-Dense和LOUDS-Sparse</h4><p><strong>1. LOUDS-Dense</strong></p>
 <p>每个节点最多有256个子节点, 那么在LOUDS-Dense编码方式中, 每个节点使用3个256个bit的bit map和一个bit序列来保存信息. 它们分别是:</p>
@@ -166,20 +166,20 @@
 <p>LOUDS-Dense-Size(l) × R  ≤  LOUDS-Sparse-Size(l)   //通常R默认值是64</p>
 <p>于是，LOUDS-Sparse方式的编码大小会决定这棵Trie树的实际编码空间大小。现在给定n个个关键字的集合，S-labes需要使用8n个bits, S-HasChild和S-LOUDS一共使用2n个bits, 所以LOUDS-Sparse使用10n个bits。而Dense占用的空间要远远小于Sparse部分，所以整个LOUDS-DS编码的Trie树接近10n个bits。</p>
 <h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>论文中使用了两组key的数据进行性能对比测试。 一组是由YCSB输出的64bit的整数， 另一组是由字符串组成的电子邮件地址,，其中整数的key有50M个，电子邮件地址组成的key有25M个。相关细节如下：</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/condition.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/condition.jpg" alt="louds"></p>
 <ol>
 <li><p>FPR对比</p>
 <p>首先对比了SuRF不同模式和布隆过滤器在FPR上的对比：</p>
 </li>
 </ol>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/fpr.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/fpr.jpg" alt="louds"></p>
 <p>​    一般情况，在point query下，SuRF比bloom filter还是要差一些。从该图的中间部分可以看出，随着SuRF-Hash的hash后缀的bit位数的增加，它对range query起不到任何作用。该图的右侧的Mixed query说明，随着后缀的长度的增加，SuRF-Real对Point和Range query都可以增强作用，所以它下降的最快，而 SuRF-Hash只对Point query起作用，所以它的后缀增加到一定后，只是将Point query的FPR降低了，但是Range query的FPR不会变化，而在整数和Email的实验中SuRF-Real和SuRF-Mixed的变化趋势不同，是因为在整数中后缀添加一个bit，这个 值变化很大，区分度高，但是相对于字符串，特别是邮箱，后缀添加一个bit，即便是一个字节，区分度可能不高(比如<a href="mailto:ttttttx@cs.cmu.ed" target="_blank" rel="noopener">ttttttx@cs.cmu.ed</a>和<a href="mailto:tttttts@cs.cmu.ed" target="_blank" rel="noopener">tttttts@cs.cmu.ed</a>)</p>
 <ol start="2">
 <li><p>性能对比</p>
 <p>SuRF的不同模式和bloom filter的吞吐对比，吞吐实际上指的是查询速度。</p>
 </li>
 </ol>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/performance.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/performance.jpg" alt="louds"></p>
 <p>可以看出无论是Point，Range，还是Mixed Query下，SuRF的三种模式吞吐量差别不大，而且在做Point Query时，布隆过滤器的吞吐量还是相对高的。</p>
 <p><strong>应用场景测试</strong></p>
 <p>​    作者对RocksDB的过滤器做了些改动，提出了四种场景的RocksDB的测试案例</p>
@@ -188,10 +188,10 @@
 <p>​            (3)SuRF-Hash (4 bit suffix per key)</p>
 <p>​            (4)SuRF-Real (4 bit suffix per key)</p>
 <p>​    实验的数据集是100G，查询的key是随机产生的。作者首先做的是性能对比</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/rper.jpg" alt="louds"></p>
+<p><img src="/2019/05/16/SuRF/rper.jpg" alt="louds"></p>
 <p>上图左侧表示的是Point query的性能对比，可以看出添加布隆过滤器后，查询时涉及的磁盘IO最少，它的吞吐量最大；图中右侧表示Range query的性能对比，此时SuRF的两种变体就有一些性能上的提升。</p>
 <p>接下来作者为了更大程度的显示SuRF的优势，于是做一组关于在range query时，故意设置一些查询语句返回为空时的性能对比试验。并逐渐增加这些查询语句在所有查询语句的比例。</p>
-<p><img src="/2019/05/16/SuRF/05/16/SuRF/empty.jpg" alt="empty"></p>
+<p><img src="/2019/05/16/SuRF/empty.jpg" alt="empty"></p>
 <p>从图中可以看出随着查询中查询结果为空的比例不断增多，SuRF的性能就会不断的提升，而带布隆过滤器的SuRF的性能始终没有任何变化。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>文中的SuRF是一种即支持Point query又支持Range query的过滤器结构</li>
